@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   postgres:
     image: postgres:15
@@ -12,12 +14,12 @@ services:
       - "5432:5432"
 
   airflow-webserver:
-    image: apache/airflow:2.7.1
+    image: my-airflow:latest   # Use your custom image!
     depends_on:
       - postgres
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__CORE__FERNET_KEY: KiHlcoeqIqDn6u2QEtdCTR4nuNWx65ctmYIjexYPvdc=
       AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: 'True'
       AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
@@ -27,30 +29,23 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./requirements.txt:/requirements.txt
     ports:
       - "8080:8080"
-    command: >
-      bash -c "pip install --no-cache-dir -r /requirements.txt && airflow webserver"
     restart: always
 
   airflow-scheduler:
-    image: apache/airflow:2.7.1
+    image: my-airflow:latest   # Use your custom image!
     depends_on:
-      - airflow-webserver
       - postgres
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__CORE__FERNET_KEY: KiHlcoeqIqDn6u2QEtdCTR4nuNWx65ctmYIjexYPvdc=
       AIRFLOW_CONN_DATA_COLLECTION_PG: postgresql://airflow:airflow@postgres:5432/airflow
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ./requirements.txt:/requirements.txt
-    command: >
-      bash -c "pip install --no-cache-dir -r /requirements.txt && airflow scheduler"
     restart: always
 
 volumes:

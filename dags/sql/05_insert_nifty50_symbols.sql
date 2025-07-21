@@ -1,0 +1,58 @@
+-- Insert all Nifty 50 symbols if they do not exist
+INSERT INTO data.symbols
+    (symbol, name, exchange, sector, isin, fno_eligible, active, metadata)
+SELECT symbol, name, exchange, sector, isin, fno_eligible, active, metadata
+FROM (VALUES
+  ('ADANIENT',     'Adani Enterprises Ltd.',           'NSE', 'Conglomerate', 'INE423A01024', TRUE, TRUE, '{}'::jsonb),
+  ('ADANIPORTS',   'Adani Ports & SEZ Ltd.',           'NSE', 'Ports',        'INE742F01042', TRUE, TRUE, '{}'::jsonb),
+  ('APOLLOHOSP',   'Apollo Hospitals Enterprise Ltd.', 'NSE', 'Healthcare',   'INE437A01024', TRUE, TRUE, '{}'::jsonb),
+  ('ASIANPAINT',   'Asian Paints Ltd.',                'NSE', 'Chemicals',    'INE021A01026', TRUE, TRUE, '{}'::jsonb),
+  ('AXISBANK',     'Axis Bank Ltd.',                   'NSE', 'Banking',      'INE238A01034', TRUE, TRUE, '{}'::jsonb),
+  ('BAJAJ-AUTO',   'Bajaj Auto Ltd.',                  'NSE', 'Automobile',   'INE917I01010', TRUE, TRUE, '{}'::jsonb),
+  ('BAJFINANCE',   'Bajaj Finance Ltd.',               'NSE', 'Finance',      'INE296A01024', TRUE, TRUE, '{}'::jsonb),
+  ('BAJAJFINSV',   'Bajaj Finserv Ltd.',               'NSE', 'Finance',      'INE918I01026', TRUE, TRUE, '{}'::jsonb),
+  ('BPCL',         'Bharat Petroleum Corporation Ltd.','NSE', 'Oil & Gas',    'INE029A01011', TRUE, TRUE, '{}'::jsonb),
+  ('BHARTIARTL',   'Bharti Airtel Ltd.',               'NSE', 'Telecom',      'INE397D01024', TRUE, TRUE, '{}'::jsonb),
+  ('BRITANNIA',    'Britannia Industries Ltd.',        'NSE', 'FMCG',         'INE216A01030', TRUE, TRUE, '{}'::jsonb),
+  ('CIPLA',        'Cipla Ltd.',                       'NSE', 'Pharma',       'INE059A01026', TRUE, TRUE, '{}'::jsonb),
+  ('COALINDIA',    'Coal India Ltd.',                  'NSE', 'Mining',       'INE522F01014', TRUE, TRUE, '{}'::jsonb),
+  ('DIVISLAB',     'Divi''s Laboratories Ltd.',        'NSE', 'Pharma',       'INE361B01024', TRUE, TRUE, '{}'::jsonb),
+  ('DRREDDY',      'Dr. Reddy''s Laboratories Ltd.',   'NSE', 'Pharma',       'INE089A01023', TRUE, TRUE, '{}'::jsonb),
+  ('EICHERMOT',    'Eicher Motors Ltd.',               'NSE', 'Automobile',   'INE066A01013', TRUE, TRUE, '{}'::jsonb),
+  ('GRASIM',       'Grasim Industries Ltd.',           'NSE', 'Conglomerate', 'INE047A01021', TRUE, TRUE, '{}'::jsonb),
+  ('HCLTECH',      'HCL Technologies Ltd.',            'NSE', 'IT',           'INE860A01027', TRUE, TRUE, '{}'::jsonb),
+  ('HDFCBANK',     'HDFC Bank Ltd.',                   'NSE', 'Banking',      'INE040A01034', TRUE, TRUE, '{}'::jsonb),
+  ('HDFCLIFE',     'HDFC Life Insurance Co. Ltd.',     'NSE', 'Insurance',    'INE795G01014', TRUE, TRUE, '{}'::jsonb),
+  ('HEROMOTOCO',   'Hero MotoCorp Ltd.',               'NSE', 'Automobile',   'INE158A01026', TRUE, TRUE, '{}'::jsonb),
+  ('HINDALCO',     'Hindalco Industries Ltd.',         'NSE', 'Metals',       'INE038A01020', TRUE, TRUE, '{}'::jsonb),
+  ('HINDUNILVR',   'Hindustan Unilever Ltd.',          'NSE', 'FMCG',         'INE030A01027', TRUE, TRUE, '{}'::jsonb),
+  ('ICICIBANK',    'ICICI Bank Ltd.',                  'NSE', 'Banking',      'INE090A01021', TRUE, TRUE, '{}'::jsonb),
+  ('INDUSINDBK',   'IndusInd Bank Ltd.',               'NSE', 'Banking',      'INE095A01012', TRUE, TRUE, '{}'::jsonb),
+  ('INFY',         'Infosys Ltd.',                     'NSE', 'IT',           'INE009A01021', TRUE, TRUE, '{}'::jsonb),
+  ('ITC',          'ITC Ltd.',                         'NSE', 'FMCG',         'INE154A01025', TRUE, TRUE, '{}'::jsonb),
+  ('JSWSTEEL',     'JSW Steel Ltd.',                   'NSE', 'Metals',       'INE019A01038', TRUE, TRUE, '{}'::jsonb),
+  ('KOTAKBANK',    'Kotak Mahindra Bank Ltd.',         'NSE', 'Banking',      'INE237A01028', TRUE, TRUE, '{}'::jsonb),
+  ('LT',           'Larsen & Toubro Ltd.',             'NSE', 'Engineering',  'INE018A01030', TRUE, TRUE, '{}'::jsonb),
+  ('M&M',          'Mahindra & Mahindra Ltd.',         'NSE', 'Automobile',   'INE101A01026', TRUE, TRUE, '{}'::jsonb),
+  ('MARUTI',       'Maruti Suzuki India Ltd.',         'NSE', 'Automobile',   'INE585B01010', TRUE, TRUE, '{}'::jsonb),
+  ('NESTLEIND',    'Nestle India Ltd.',                'NSE', 'FMCG',         'INE239A01016', TRUE, TRUE, '{}'::jsonb),
+  ('NTPC',         'NTPC Ltd.',                        'NSE', 'Power',        'INE733E01010', TRUE, TRUE, '{}'::jsonb),
+  ('ONGC',         'Oil & Natural Gas Corporation',    'NSE', 'Oil & Gas',    'INE213A01029', TRUE, TRUE, '{}'::jsonb),
+  ('POWERGRID',    'Power Grid Corporation of India',  'NSE', 'Power',        'INE752E01010', TRUE, TRUE, '{}'::jsonb),
+  ('SBIN',         'State Bank of India',              'NSE', 'Banking',      'INE062A01020', TRUE, TRUE, '{}'::jsonb),
+  ('SHREECEM',     'Shree Cement Ltd.',                'NSE', 'Cement',       'INE070A01015', TRUE, TRUE, '{}'::jsonb),
+  ('SUNPHARMA',    'Sun Pharmaceutical Industries',    'NSE', 'Pharma',       'INE044A01036', TRUE, TRUE, '{}'::jsonb),
+  ('TATACONSUM',   'Tata Consumer Products Ltd.',      'NSE', 'FMCG',         'INE192A01025', TRUE, TRUE, '{}'::jsonb),
+  ('TATAMOTORS',   'Tata Motors Ltd.',                 'NSE', 'Automobile',   'INE155A01022', TRUE, TRUE, '{}'::jsonb),
+  ('TATASTEEL',    'Tata Steel Ltd.',                  'NSE', 'Metals',       'INE081A01020', TRUE, TRUE, '{}'::jsonb),
+  ('TCS',          'Tata Consultancy Services Ltd.',   'NSE', 'IT',           'INE467B01029', TRUE, TRUE, '{}'::jsonb),
+  ('TECHM',        'Tech Mahindra Ltd.',               'NSE', 'IT',           'INE669C01036', TRUE, TRUE, '{}'::jsonb),
+  ('TITAN',        'Titan Company Ltd.',               'NSE', 'Consumer',     'INE280A01028', TRUE, TRUE, '{}'::jsonb),
+  ('TRENT',        'Trent Ltd.',                       'NSE', 'Retail',       'INE849A01020', TRUE, TRUE, '{}'::jsonb),
+  ('ULTRACEMCO',   'UltraTech Cement Ltd.',            'NSE', 'Cement',       'INE481G01011', TRUE, TRUE, '{}'::jsonb),
+  ('UPL',          'UPL Ltd.',                         'NSE', 'Agrochemicals','INE628A01036', TRUE, TRUE, '{}'::jsonb),
+  ('WIPRO',        'Wipro Ltd.',                       'NSE', 'IT',           'INE075A01022', TRUE, TRUE, '{}'::jsonb)
+) AS s(symbol, name, exchange, sector, isin, fno_eligible, active, metadata)
+WHERE NOT EXISTS (
+    SELECT 1 FROM data.symbols t WHERE t.symbol = s.symbol
+);

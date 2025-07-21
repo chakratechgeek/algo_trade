@@ -1,0 +1,102 @@
+# Basic Docker Compose Commands for Apache Airflow
+
+# Start all Airflow services (webserver, scheduler, Postgres) in detached mode
+docker-compose up -d
+
+# Stop all Airflow services and remove containers and network (volumes persist)
+docker-compose down
+
+# Restart all running Airflow services
+docker-compose restart
+
+# Initialize Airflow metadata database (run once before first start)
+docker-compose run airflow-webserver airflow db init
+
+# Create an admin user for Airflow web UI login
+# (On Windows CMD use carets ^, on PowerShell backticks `)
+docker-compose run --rm airflow-webserver airflow users create \
+  --username admin \
+  --firstname Admin \
+  --lastname User \
+  --role Admin \
+  --email chakraodba@gmail.com \
+  --password qAzwsxedc@2187
+
+# View real-time logs
+docker-compose logs -f airflow-webserver
+docker-compose logs -f airflow-scheduler
+docker-compose logs -f postgres
+
+# Run any Airflow CLI command inside the webserver container
+docker-compose run airflow-webserver airflow <command>
+
+# List running Docker containers
+docker ps
+
+# Open a shell inside a running container
+docker exec -it <container_name> /bin/bash
+
+# Test a DAG task
+docker-compose run airflow-webserver airflow tasks test <dag_id> <task_id> <execution_date>
+
+# List all Airflow DAGs
+docker-compose run airflow-webserver airflow dags list
+
+# Trigger a DAG run manually
+docker-compose run airflow-webserver airflow dags trigger <dag_id>
+
+
+# ─── Database (Postgres) Commands ─────────────────────────────────────────────
+
+# 1. Open psql shell as the airflow user (interactive)
+docker-compose exec postgres psql -U airflow -d data_collection
+
+# 2. List all databases
+docker-compose exec postgres psql -U airflow -c "\l"
+
+# 3. List all tables in the current database
+docker-compose exec postgres psql -U airflow -d airflow -c "\dt"
+
+# 4. Describe a specific table (e.g. 'dag' table)
+docker-compose exec postgres psql -U airflow -d airflow -c "\d dag"
+
+# 5. Run an arbitrary SQL file (e.g. restore backup.sql)
+docker-compose exec -T postgres psql -U airflow -d airflow < ./backups/backup.sql
+
+# 6. Dump the entire 'airflow' database to a SQL file (backup)
+docker-compose exec postgres pg_dump -U airflow -d airflow -F p > ./backups/airflow_backup.sql
+
+# 7. Tail Postgres logs
+docker-compose logs -f postgres
+
+# 8. Restart only the Postgres service
+docker-compose restart postgres
+
+#Restart Apache Airflow services after making changes to DAGs or configurations
+docker-compose restart airflow-scheduler
+docker-compose restart airflow-webserver
+
+
+
+# 1. Connect to Postgres inside the running container
+docker-compose exec postgres psql -U airflow -d data_collection
+
+# --- Now you're at the "airflow=#" or "postgres=#" prompt ---
+
+-- 2. List all databases
+\l
+
+-- 3. Connect to the "data_collection" database
+\c data_collection
+
+-- 4. List all schemas in this database
+\dn
+
+-- 5. List all tables in the "tracker" schema
+\dt tracker.*
+
+-- 6. Describe the structure of your tracker table
+\d tracker.data_collection_tracker
+
+-- 7. (Optional) See all data in the tracker table (should be empty at first)
+SELECT * FROM tracker.data_collection_tracker;

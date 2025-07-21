@@ -13,8 +13,8 @@ services:
     ports:
       - "5432:5432"
 
-  airflow-webserver:
-    image: my-airflow:latest   # Use your custom image!
+    airflow-webserver:
+    image: my-airflow:latest
     depends_on:
       - postgres
     environment:
@@ -32,9 +32,10 @@ services:
     ports:
       - "8080:8080"
     restart: always
+    command: airflow webserver   # <- add exactly this line clearly here!
 
   airflow-scheduler:
-    image: my-airflow:latest   # Use your custom image!
+    image: my-airflow:latest
     depends_on:
       - postgres
     environment:
@@ -47,6 +48,8 @@ services:
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
     restart: always
+    command: airflow scheduler   # <- add exactly this line clearly here!
+
 
 volumes:
   postgres_db_volume:

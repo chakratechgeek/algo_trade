@@ -201,6 +201,10 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+#My trade project reject files
+**/dag/variables.py
+/logs/**
+/log/**
 # Marimo
 marimo/_static/
 marimo/_lsp/

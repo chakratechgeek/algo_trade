@@ -202,7 +202,7 @@ cython_debug/
 .cursorindexingignore
 
 #My trade project reject files
-**/dag/variables.py
+**/dags/variables.py
 /logs/**
 /log/**
 init_airflow.sh

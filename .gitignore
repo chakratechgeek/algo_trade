@@ -205,7 +205,7 @@ cython_debug/
 **/dag/variables.py
 /logs/**
 /log/**
-**/init_airflow.sh
+init_airflow.sh
 # Marimo
 marimo/_static/
 marimo/_lsp/

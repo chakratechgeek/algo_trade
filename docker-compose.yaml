@@ -13,7 +13,7 @@ services:
     ports:
       - "5432:5432"
 
-    airflow-webserver:
+  airflow-webserver:
     image: my-airflow:latest
     depends_on:
       - postgres

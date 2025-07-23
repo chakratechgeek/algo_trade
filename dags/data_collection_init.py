@@ -126,4 +126,11 @@ with DAG(
         sql='sql/16_risk_events_table.sql'
     )
 
-    create_db >> create_schema >> create_schema2 >> create_tables >> create_symbols_table >> insert_nifty50_symbols >> create_news_table >> create_corporate_action_table >>fundamentals_table >> macro_sector_table >> ohlcv_table >> regulatory_events_table >> history_ohlcv_table >> orderbook_levels_table >> trade_ticks_table >> mutual_fund_flows_table >> risk_events_table
+    market_snapshots_52weeks_table = PostgresOperator(
+       task_id='17_market_snapshots_52weeks_table',
+       postgres_conn_id='data_collection_pg',
+       database='data_collection',
+       sql='sql/17_market_snapshots_52weeks_table.sql'
+    )
+
+    create_db >> create_schema >> create_schema2 >> create_tables >> create_symbols_table >> insert_nifty50_symbols >> create_news_table >> create_corporate_action_table >>fundamentals_table >> macro_sector_table >> ohlcv_table >> regulatory_events_table >> history_ohlcv_table >> orderbook_levels_table >> trade_ticks_table >> mutual_fund_flows_table >> risk_events_table >> market_snapshots_52weeks_table

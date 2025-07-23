@@ -1,0 +1,155 @@
+import json
+import pyotp
+import requests
+import pytz
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from SmartApi import SmartConnect
+from variables import M_API_KEY, CLIENT_CODE, MPIN, TOTP_SECRET
+
+DB_CONN_ID  = "data_collection_pg"
+PG_SCHEMA   = "data_collection"
+SCRIP_URL   = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"
+MARKET_TZ   = pytz.timezone("Asia/Kolkata")
+MARKET_OPEN = datetime.strptime("09:15", "%H:%M").time()
+MARKET_CLOSE = datetime.strptime("15:30", "%H:%M").time()
+
+def get_symbol_tokens():
+    pg = PostgresHook(postgres_conn_id=DB_CONN_ID, schema=PG_SCHEMA)
+    rows = pg.get_records("SELECT symbol_id, symbol FROM data.symbols WHERE active = TRUE")
+    symbol_ids = {r[1]: r[0] for r in rows}
+    scrips = requests.get(SCRIP_URL, timeout=10).json()
+    tokens = {
+        item["token"]: {
+            "symbol": item["symbol"][:-3],
+            "symbol_id": symbol_ids[item["symbol"][:-3]]
+        }
+        for item in scrips
+        if item.get("exch_seg")=="NSE"
+        and item.get("symbol","").endswith("-EQ")
+        and item["symbol"][:-3] in symbol_ids
+    }
+    print("[MAP] tokens:", tokens)
+    return tokens
+
+def get_auth():
+    totp = pyotp.TOTP(TOTP_SECRET).now()
+    sc = SmartConnect(M_API_KEY)
+    login = sc.generateSession(CLIENT_CODE, MPIN, totp)
+    if not login.get("status"):
+        raise RuntimeError("Login failed: %s" % login)
+    jwt = login["data"]["jwtToken"]
+    if jwt.startswith("Bearer "):
+        jwt = jwt.split(" ",1)[1]
+    print("[AUTH] OK, JWT masked:", jwt[:10], "...")
+    return jwt
+
+def collect_market_snapshot():
+    now = datetime.now(MARKET_TZ)
+    if not (MARKET_OPEN <= now.time() <= MARKET_CLOSE):
+        print(f"[INFO] Outside market hours ({now.time()}), skipping.")
+        return
+
+    jwt = get_auth()
+    tokens = get_symbol_tokens()
+    if not tokens:
+        print("[ERR] No tokens found, abort.")
+        return
+
+    URL = "https://apiconnect.angelbroking.com/rest/secure/angelbroking/market/v1/quote/"
+    headers = {
+        "Authorization": f"Bearer {jwt}",
+        "X-ClientLocalIP": "127.0.0.1",
+        "X-ClientPublicIP": "127.0.0.1",
+        "X-MACAddress": "00:00:00:00:00:00",
+        "X-PrivateKey": M_API_KEY,
+        "X-SourceID": "WEB",
+        "X-UserType": "USER",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+
+    pg = PostgresHook(postgres_conn_id=DB_CONN_ID, schema=PG_SCHEMA)
+    for tok, info in tokens.items():
+        payload = {"mode":"FULL", "exchangeTokens":{"NSE":[tok]}}
+        print(f"[REQ] {info['symbol']} => POST {URL} payload={payload}")
+        r = requests.post(URL, headers=headers, json=payload, timeout=10)
+        print(f"[RESP] {info['symbol']} status={r.status_code} len={len(r.text)}")
+        try:
+            j = r.json()
+        except:
+            print(f"[ERR] JSON parse failed for {info['symbol']}: '{r.text}'")
+            continue
+
+        fetched = j.get("data",{}).get("fetched",[])
+        if not fetched:
+            print(f"[WARN] no fetched data for {info['symbol']}: {j}")
+            continue
+
+        entry = fetched[0]
+        ts = datetime.now(pytz.UTC)
+
+        row = {
+            "symbol_id":    info["symbol_id"],
+            "snapshot_ts":  ts,
+            "last_traded_price": float(entry.get("ltp",0)),
+            "last_traded_qty":   int(entry.get("lastTradeQty",0)),
+            "average_price":     float(entry.get("avgPrice",0)),
+            "volume":            int(entry.get("tradeVolume",0)),
+            "total_buy_qty":     int(entry.get("totBuyQuan",0)),
+            "total_sell_qty":    int(entry.get("totSellQuan",0)),
+            "open_price":        float(entry.get("open",0)),
+            "high_price":        float(entry.get("high",0)),
+            "low_price":         float(entry.get("low",0)),
+            "close_price":       float(entry.get("close",0)),
+            "last_traded_ts":    ts,  # or parse entry["exchTradeTime"]
+            "open_interest":     int(entry.get("opnInterest",0)),
+            "oi_change_pct":     None,
+            "upper_circuit":     float(entry.get("upperCircuit",0)),
+            "lower_circuit":     float(entry.get("lowerCircuit",0)),
+            "fifty_two_week_high": float(entry.get("52WeekHigh",0)),
+            "fifty_two_week_low":  float(entry.get("52WeekLow",0)),
+            "source":            "AngelOne",
+            "extra_data":        json.dumps(entry, default=str),
+        }
+
+        pg.run("""
+            INSERT INTO data.market_snapshots_52weeks (
+              symbol_id, snapshot_ts, last_traded_price, last_traded_qty, average_price,
+              volume, total_buy_qty, total_sell_qty, open_price, high_price, low_price,
+              close_price, last_traded_ts, open_interest, oi_change_pct,
+              upper_circuit, lower_circuit, fifty_two_week_high, fifty_two_week_low,
+              source, extra_data
+            ) VALUES (
+              %(symbol_id)s, %(snapshot_ts)s, %(last_traded_price)s, %(last_traded_qty)s, %(average_price)s,
+              %(volume)s, %(total_buy_qty)s, %(total_sell_qty)s, %(open_price)s, %(high_price)s, %(low_price)s,
+              %(close_price)s, %(last_traded_ts)s, %(open_interest)s, %(oi_change_pct)s,
+              %(upper_circuit)s, %(lower_circuit)s, %(fifty_two_week_high)s, %(fifty_two_week_low)s,
+              %(source)s, %(extra_data)s
+            )
+            ON CONFLICT (symbol_id, snapshot_ts) DO NOTHING;
+        """, parameters=row)
+
+        print(f"[OK] {info['symbol']} inserted at {ts}")
+
+default_args = {
+    'owner': 'airflow',
+    'start_date': datetime(2025,7,22),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+with DAG(
+    dag_id="collect_market_snapshots_hourly",
+    default_args=default_args,
+    schedule_interval="15 9-15/1 * * 1-5",
+    catchup=False,
+    tags=["angelone","marketdata","snapshots"],
+) as dag:
+    PythonOperator(
+        task_id="collect_market_snapshots",
+        python_callable=collect_market_snapshot,
+    )
+

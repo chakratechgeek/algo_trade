@@ -1,6 +1,7 @@
 feedparser==6.0.10
 yfinance==0.2.18
-pandas==2.0.3
+numpy==1.26.4
+pandas==2.2.2
 smartapi-python==1.5.5
 pyotp==2.8.0
 websocket-client==1.6.2
@@ -12,3 +13,4 @@ webdriver-manager
 beautifulsoup4
 xgboost
 scikit-learn
+websocket
